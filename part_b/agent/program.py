@@ -1,7 +1,7 @@
 # COMP30024 Artificial Intelligence, Semester 1 2024
 # Project Part B: Game Playing Agent
 
-from referee.game import PlayerColor, Action, PlaceAction, Coord
+from referee.game import PlayerColor, Action, PlaceAction, Coord, board
 
 
 class Agent:
@@ -16,6 +16,7 @@ class Agent:
         Any setup and/or precomputation should be done here.
         """
         self._color = color
+        self.board = board.Board()
         match color:
             case PlayerColor.RED:
                 print("Testing: I am playing as RED")
