@@ -7,12 +7,11 @@ import math
 import time
 
 from referee.game.coord import Direction
-from referee.game.board import Board
+from referee.game.board import Board, CellState
 import random
 
 
 class Agent:
-    board: dict[Coord, PlayerColor]
     """
     This class is the "entry point" for your agent, providing an interface to
     respond to various Tetress game events.
@@ -24,7 +23,7 @@ class Agent:
         Any setup and/or precomputation should be done here.
         """
         self._color = color
-        #self.board = dict[Coord, PlayerColor]
+        self.board = Board()
         match color:
             case PlayerColor.RED:
                 print("Testing: I am playing as RED")
@@ -41,6 +40,7 @@ class Agent:
         # the agent is playing as BLUE or RED. Obviously this won't work beyond
         # the initial moves of the game, so you should use some game playing
         # technique(s) to determine the best action to take.
+        #print(self.board._state[Coord(0,0)].player == None)
         '''
         match self._color:
             case PlayerColor.RED:
@@ -60,30 +60,35 @@ class Agent:
                     Coord(2, 6)
                 )
         '''
-
+        
         possible_actions = []
-        possible_expansions = get_all_expansion(self.board, self._color)
+        possible_expansions = get_all_expansion(self.board._state, self._color)
         for e in possible_expansions:
             possible_actions.append(e.get_placeAction())
 
-        print(Coord(0,0) in self.board)
+        #print(Coord(0,0) in self.board)
 
         if not possible_actions:
-            if not self.board._state:
+            if checkEmpty(self.board._state):
                 action = PlaceAction(
                     Coord(2, 3), 
                     Coord(2, 4), 
                     Coord(2, 5), 
                     Coord(2, 6)
                 )
-                board_update(action, self.board, self._color)
+                #self.board.apply_action(action)
                 return action
             else:
                 first_actions = []
-                possible_first = get_all_expansion(self.board, self._color.opponent)
-                return random.choice(possible_first).get_placeAction()
+                possible_first = get_all_expansion(self.board._state, self._color.opponent)
+                action = random.choice(possible_first).get_placeAction()
+                #self.board.apply_action(action)
+                return action
         
-        return random.choice(possible_actions)
+        action = random.choice(possible_actions)
+        #self.board.apply_action(action)
+        return action
+        
         
         
 
@@ -102,12 +107,13 @@ class Agent:
         # to update your agent's internal game state representation.
         print(f"Testing: {color} played PLACE action: {c1}, {c2}, {c3}, {c4}")
         #self.board.apply_action(action)
-        board_update(action, self.board, self._color.opponent)
+        self.board.apply_action(action)
+        
         
 
         
 
-def get_all_expansion(board: dict[Coord, PlayerColor], color):
+def get_all_expansion(board: dict[Coord, CellState], color):
     if color == PlayerColor.BLUE:
         color_list = get_all_blue(board)
     elif color == PlayerColor.RED:
@@ -130,24 +136,24 @@ def expand(board,expansions,expansion):
     for c in expansion.Coords:
         for d in Direction:
             new_coord = c + d  
-            if new_coord not in board and new_coord not in expansion.Coords:
+            if board[new_coord].player == None and new_coord not in expansion.Coords:
                 new_expansion = Expansion()
                 new_expansion.Coords = expansion.Coords.copy()
                 new_expansion.length = expansion.length
                 new_expansion.add_coord(new_coord)
                 expand(board, expansions, new_expansion)
 
-def get_all_red(board: dict[Coord, PlayerColor]):
+def get_all_red(board: dict[Coord, CellState]):
     red = []
     for key in board:
-        if str(board[key]) == "RED":
+        if board[key].player == PlayerColor.RED:
             red.append(key)
     return red
 
-def get_all_blue(board):
+def get_all_blue(board: dict[Coord, CellState]):
     blue = []
     for key in board:
-        if str(board[key]) == "BLUE":
+        if board[key].player == PlayerColor.BLUE:
             blue.append(key)
     return blue
 
@@ -155,7 +161,7 @@ def get_all_space(board,red):
     spaces = []
     for r in red:
         for d in Direction:
-            if r + d not in board and r + d not in spaces:
+            if board[r+d].player == None and r + d not in spaces:
                 spaces.append(r+d)
     return spaces
 
@@ -205,6 +211,13 @@ def board_update(action: PlaceAction, board: dict[Coord, PlayerColor], color):
             del board[c]
         
     #return ischanged
+
+def checkEmpty(board):
+    for key in board:
+        if board[key].player != None:
+            return False
+    
+    return True
 
 class Expansion:
 
