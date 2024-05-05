@@ -165,53 +165,6 @@ def get_all_space(board,red):
                 spaces.append(r+d)
     return spaces
 
-def board_update(action: PlaceAction, board: dict[Coord, PlayerColor], color):
-    ischanged = 0
-
-    board[action.c1] = PlayerColor.RED
-    board[action.c2] = PlayerColor.RED
-    board[action.c3] = PlayerColor.RED
-    board[action.c4] = PlayerColor.RED
-
-    coords = action.coords
-
-    for c in coords:
-        row_need_clear = 1
-        column_need_clear = 1
-        if c not in board:
-            continue
-
-        curr_c = c + Direction.Right
-        while(curr_c != c):
-            if curr_c not in board:
-                row_need_clear = 0
-                break
-            curr_c += Direction.Right
-        
-        curr_c = c + Direction.Down
-        while(curr_c != c):
-            if curr_c not in board:
-                column_need_clear = 0
-                break
-            curr_c += Direction.Down
-                
-        if(row_need_clear == 1):
-            ischanged = 1
-            curr_c = c + Direction.Right
-            while(curr_c != c):
-                del board[curr_c]
-                curr_c += Direction.Right
-        if(column_need_clear == 1):
-            ischanged = 1
-            curr_c = c + Direction.Down
-            while(curr_c != c):
-                del board[curr_c]
-                curr_c += Direction.Down
-        if(row_need_clear == 1 or column_need_clear == 1):
-            del board[c]
-        
-    #return ischanged
-
 def checkEmpty(board):
     for key in board:
         if board[key].player != None:

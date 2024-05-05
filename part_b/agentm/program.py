@@ -1,6 +1,8 @@
 # COMP30024 Artificial Intelligence, Semester 1 2024
 # Project Part B: Game Playing Agent  python -m referee agenth.program agentr.program
 #python -m referee agentr.program agenth.program
+#python -m referee agenth.program agentm.program
+#python -m referee agentr.program agentm.program
 
 from referee.game import PlayerColor, Action, PlaceAction, Coord, board
 import heapq
@@ -86,11 +88,11 @@ class Agent:
                 #self.board.apply_action(action)
                 for p in possible_first:
                     first_actions.append(p.get_placeAction())
-                return chooseAction(first_actions, self.board, self._color)
+                return choose_action(self.board, self._color, first_actions)
         
         #action = random.choice(possible_actions)
         #self.board.apply_action(action)
-        return chooseAction(possible_actions, self.board, self._color)
+        return choose_action(self.board, self._color, possible_actions)
         
         
         
@@ -200,21 +202,21 @@ def heuristic(board: Board, color: PlayerColor, action, depth):
     #nprint(h)
     return h
 
-def chooseAction(actions, board: Board, color):
+def chooseAction(actions, board: Board, color, length):
     x = 0
     maxh = 0
     action = actions[0]
     for a in actions:
         #print(x)
         x += 1
-        #if board.turn_count < 10:
+        #if length < 10:
             #currh = heuristic_relax(board, color, a)
-        #elif 10 <= board.turn_count < 20: 
-            #currh = heuristic(board, color, a, 2)
-        if board.turn_count < 30:
-            currh = heuristic(board, color, a, 3)
-        else:
+        if length < 100: 
             currh = heuristic(board, color, a, 4)
+        elif 100 <= length:
+            currh = heuristic(board, color, a, 3)
+        #else:
+            #currh = heuristic(board, color, a, 4)
         
         if currh > maxh:
             maxh = currh
@@ -228,6 +230,67 @@ def checkEmpty(board):
             return False
     
     return True
+
+
+
+def minMax(board: Board, depth, ismax, color: PlayerColor):
+    if depth == 0:
+        board.undo_action
+        return heuristic(board, color, a, 3)
+    
+    #board.apply_action(action)
+
+    my_expension = get_all_expansion(board._state, color, 4)
+    my_actions = []
+    for e in my_expension:
+        my_actions.append(e.get_placeAction())
+    
+    opp_expension = get_all_expansion(board._state, color.opponent, 4)
+
+    if(len(opp_expension) == 0):
+        board.undo_action
+        return 100000
+    
+    if ismax == 1:
+        currMax = float('-inf')
+        for a in my_actions:
+            board.apply_action(a)
+            evaluation = minMax(board, depth - 1, ismax - 1, color.opponent)
+            if evaluation > currMax:
+                currMax = evaluation
+        board.undo_action
+        return currMax
+
+    else:
+        currMin = float('inf')
+        for a in my_actions:
+            board.apply_action(a)
+            evaluation = minMax(board, depth - 1, ismax + 1, color.opponent)
+            if evaluation < currMin:
+                currMin = evaluation
+        board.undo_action
+        return currMin
+
+def choose_action(board: Board, color: PlayerColor, my_actions):
+
+    curr_best_move = my_actions[0]
+    curr_best_value = 0
+    for a in my_actions:
+        board.apply_action(a)
+        curr_value = minMax(board, 3, 0, color.opponent)
+        if curr_value > curr_best_value:
+            curr_best_value = curr_value
+            curr_best_move = a
+    board.undo_action
+    return curr_best_move
+    
+
+
+
+
+
+
+
 
 class Expansion:
 
