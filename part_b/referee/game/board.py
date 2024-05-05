@@ -113,7 +113,7 @@ class Board:
 
         return mutation
 
-    def undo_action(self) -> BoardMutation:
+    def  undo_action(self) -> BoardMutation:
         """
         Undo the last action played, mutating the board state. Throws an
         IndexError if no actions have been played.
