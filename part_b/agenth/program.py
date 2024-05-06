@@ -211,10 +211,10 @@ def chooseAction(actions, board: Board, color):
             #currh = heuristic_relax(board, color, a)
         #elif 10 <= board.turn_count < 20: 
             #currh = heuristic(board, color, a, 2)
-        if board.turn_count < 30:
-            currh = heuristic(board, color, a, 3)
-        else:
-            currh = heuristic(board, color, a, 4)
+        #if board.turn_count < 30:
+        currh = heuristic(board, color, a, 3)
+        #else:
+            #currh = heuristic(board, color, a, 4)
         
         if currh > maxh:
             maxh = currh

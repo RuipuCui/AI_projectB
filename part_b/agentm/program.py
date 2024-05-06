@@ -183,7 +183,7 @@ def heuristic_relax(board: Board, color: PlayerColor, action):
     my_expension = get_all_space(board._state, get_color_blocks(board._state, color))
     opp_expension = get_all_space(board._state, get_color_blocks(board._state, color.opponent))
     if(len(opp_expension) == 0):
-        board.undo_action()
+        #board.undo_action()
         return 1000
     h = len(my_expension) - len(opp_expension)
     board.undo_action()
@@ -195,7 +195,7 @@ def heuristic(board: Board, color: PlayerColor, depth):
     my_expension = get_all_expansion(board._state, color, depth)
     opp_expension = get_all_expansion(board._state, color.opponent, depth)
     if(len(opp_expension) == 0):
-        board.undo_action()
+        #board.undo_action()
         return 1000
     h = len(my_expension) - len(opp_expension)
     #board.undo_action()
@@ -238,6 +238,14 @@ def checkEmpty(board):
 
 
 def minMax(board: Board, depth, ismax, color: PlayerColor):
+    '''
+    noblue = 0
+    for key in board._state:
+        if board._state[key].player == PlayerColor.BLUE:
+            noblue = 1
+    if noblue == 0:
+        exit(0)
+    '''
 
     print(board.render(True, True))
     print("curr depth = ", depth, board._history[-1].action, color)
@@ -249,7 +257,7 @@ def minMax(board: Board, depth, ismax, color: PlayerColor):
             h = heuristic(board, color.opponent, 3)
         else:
             h = heuristic(board, color, 3)
-        undoaction = (board.undo_action()).action
+        board.undo_action()
         #print(board.render(True, True))
         print("h = ", h)
         return h
@@ -304,12 +312,13 @@ def choose_action(board: Board, color: PlayerColor, my_actions):
     curr_best_move = my_actions[0]
     curr_best_value = float('-inf')
     for a in my_actions:
+        #print("111")
         board.apply_action(a)
-        curr_value = minMax(board, 2, 0, color.opponent)
+        curr_value = minMax(board, 1, 0, color.opponent)
         if curr_value > curr_best_value:
             curr_best_value = curr_value
             curr_best_move = a
-    board.undo_action()
+    #board.undo_action()
 
     return curr_best_move
 
