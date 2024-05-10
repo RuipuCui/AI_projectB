@@ -64,7 +64,7 @@ class Agent:
                     Coord(2, 6)
                 )
         '''
-        print(referee, " aaaaaaaaa ")
+        print(referee["time_remaining"])
         possible_actions = []
         possible_expansions = get_all_expansion(self.board._state, self._color, 4)
         for e in possible_expansions:
@@ -89,11 +89,11 @@ class Agent:
                 #self.board.apply_action(action)
                 for p in possible_first:
                     first_actions.append(p.get_placeAction())
-                return choose_action(self.board, self._color, first_actions)
+                return choose_action(self.board, self._color, first_actions, referee["time_remaining"])
         
         #action = random.choice(possible_actions)
         #self.board.apply_action(action)
-        return choose_action(self.board, self._color, possible_actions)
+        return choose_action(self.board, self._color, possible_actions, referee["time_remaining"])
         
         
         
@@ -279,16 +279,16 @@ def minMax(board: Board, depth, ismax, color: PlayerColor, alpha, beta, h_depth,
     if len(my_expension) <= 25 and h_depth != -1:
         #print("current depth = " , h_depth)
         h_depth = 4
-    elif 25 < len(my_expension) <= 40 and h_depth != -1:
+    elif 25 < len(my_expension) <= 50 and h_depth != -1:
         #print("current depth = " , h_depth)
         h_depth = 3
     else:
         h_depth = 3
-        print("current depth = " , h_depth,   "depth_decrement_factor = 2")
+        print("current depth = " , depth,   "depth_decrement_factor = 2")
         depth_decrement_factor = 2
 
-    if time.time() - start_time >= 30:
-        h_depth = 3
+    if time.time() - start_time >= 35:
+        h_depth = 2
         print("too slow lol")
         depth_decrement_factor = 2
 
@@ -348,7 +348,7 @@ def minMax(board: Board, depth, ismax, color: PlayerColor, alpha, beta, h_depth,
         board.undo_action()
         return currMin
 
-def choose_action(board: Board, color: PlayerColor, my_actions):
+def choose_action(board: Board, color: PlayerColor, my_actions, time_remaining):
     start_time = time.time()
 
     h_depth = 3
@@ -369,7 +369,8 @@ def choose_action(board: Board, color: PlayerColor, my_actions):
     else:
         depth = 0
 
-    print("depth = ", depth)
+    if time_remaining <= 30:
+        depth = 0
 
     if len(my_actions) <= 30:
         h_depth = 4
@@ -377,6 +378,18 @@ def choose_action(board: Board, color: PlayerColor, my_actions):
         h_depth = 3
     elif 100 < len(my_actions):
         h_depth = 2
+
+    if time_remaining <= 35:
+        depth = 0
+        #h_depth = 3
+    elif time_remaining <= 20:
+        depth = 0
+        h_depth = 2
+    elif time_remaining <= 2:
+        return random.choice(my_actions)
+    
+    print("depth = ", depth)
+
 
     if board.turn_count >= 110:
         cellFilled = 0
@@ -403,6 +416,7 @@ def choose_action(board: Board, color: PlayerColor, my_actions):
 
 #python -m referee agentr.program agentm.program
 #python -m referee agenth.program agentm.program
+#python -m referee agentr.program agent -t 180
     
 
 

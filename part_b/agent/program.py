@@ -127,15 +127,24 @@ def get_all_expansion(board: dict[Coord, CellState], color, depth):
         color_list = get_all_red(board)
     spaces = get_all_space(board, color_list)   #array of Coord
     expansions = [] 
-    temp = []
+    expansion_list = [[], [], []]
     for space in spaces :   # use space to create a new expansion to recurse
         expension = Expansion(space)
-        expand(board,expansions,expension, depth)
-    return expansions
+        expand(board,expansions,expension, depth, expansion_list)
+    return expansion_list[0] + expansion_list[1] + expansion_list[2]
 
-def expand(board,expansions,expansion, depth):
+def expand(board,expansions,expansion, depth, expansion_list):
     if expansion.length == depth:
         if expansion not in expansions:
+            max_space = max(max_toroidal_dimensions(expansion.Coords))
+            if max_space == 4:
+                expansion_list[0].append(expansion)
+            elif max_space == 3:
+                expansion_list[1].append(expansion)
+            elif max_space == 2:
+                expansion_list[2].append(expansion)
+            else:
+                expansion_list[1].append(expansion)
             expansions.append(expansion)
         return
 
@@ -148,7 +157,7 @@ def expand(board,expansions,expansion, depth):
                 new_expansion.Coords = expansion.Coords.copy()
                 new_expansion.length = expansion.length
                 new_expansion.add_coord(new_coord)
-                expand(board, expansions, new_expansion, depth)
+                expand(board, expansions, new_expansion, depth, expansion_list)
 
 def get_all_red(board: dict[Coord, CellState]):
     red = []
@@ -414,6 +423,22 @@ def choose_action(board: Board, color: PlayerColor, my_actions, time_remaining):
 
     return curr_best_move
 
+def max_toroidal_dimensions(coords, board_size=11):
+    def calculate_normal_and_wraparound(values, max_value):
+        normal_distance = max(values) - min(values) + 1
+        wraparound_distance = min(values) + max_value - max(values) + 1
+        return normal_distance, wraparound_distance
+
+    row_values = [coord.r for coord in coords]
+    col_values = [coord.c for coord in coords]
+
+    normal_width, wraparound_width = calculate_normal_and_wraparound(col_values, board_size)
+    normal_height, wraparound_height = calculate_normal_and_wraparound(row_values, board_size)
+
+    max_width = min(normal_width, wraparound_width)
+    max_height = min(normal_height, wraparound_height)
+
+    return max_width, max_height
 #python -m referee agentr.program agentm.program
 #python -m referee agenth.program agentm.program
 #python -m referee agentr.program agent -t 180
