@@ -3,6 +3,7 @@
 #python -m referee agentr.program agenth.program
 #python -m referee agenth.program agentm.program
 #python -m referee agentr.program agentm.program
+#691
 
 from referee.game import PlayerColor, Action, PlaceAction, Coord, board
 import heapq
@@ -63,7 +64,7 @@ class Agent:
                     Coord(2, 6)
                 )
         '''
-        
+        print(referee, " aaaaaaaaa ")
         possible_actions = []
         possible_expansions = get_all_expansion(self.board._state, self._color, 4)
         for e in possible_expansions:
@@ -88,11 +89,11 @@ class Agent:
                 #self.board.apply_action(action)
                 for p in possible_first:
                     first_actions.append(p.get_placeAction())
-                return chooseAction(self.board, self._color, first_actions)
+                return choose_action(self.board, self._color, first_actions)
         
         #action = random.choice(possible_actions)
         #self.board.apply_action(action)
-        return chooseAction(self.board, self._color, possible_actions)
+        return choose_action(self.board, self._color, possible_actions)
         
         
         
@@ -111,6 +112,7 @@ class Agent:
         # demonstration purposes. You should replace this with your own logic
         # to update your agent's internal game state representation.
         print(f"Testing: {color} played PLACE action: {c1}, {c2}, {c3}, {c4}")
+        #print(referee["time_remaining"])
         #self.board.apply_action(action)
         self.board.apply_action(action)
         
@@ -176,64 +178,53 @@ def get_all_space(board,color_list):
                 spaces.append(r+d)
     return spaces
 
-def heuristic_relax(board: Board, color: PlayerColor, action):
-    board.apply_action(action)
-    #my_expension = get_all_expansion(board._state, color)
-    #opp_expension = get_all_expansion(board._state, color.opponent)
-    my_expension = get_all_space(board._state, get_color_blocks(board._state, color))
-    opp_expension = get_all_space(board._state, get_color_blocks(board._state, color.opponent))
-    if(len(opp_expension) == 0):
-        #board.undo_action()
-        return 1000
-    h = len(my_expension) - len(opp_expension)
-    board.undo_action()
-    #nprint(h)
-    return h
 
 def heuristic(board: Board, color: PlayerColor, depth):
+
+    if depth == -1:
+        print(" h changed ")
+        my_color = 0
+        opp_color = 0
+        for key in board._state:
+            if board._state[key] == color:
+                my_color += 1
+            elif board._state[key] == color.opponent:
+                opp_color += 1
+        
+        if board.turn_color == color:
+            if my_color == 0:
+                return -1000
+            #if opp_color == 0:
+                #return 1000
+        if board.turn_color == color.opponent:
+            if opp_color == 0:
+                return 1000
+            #if my_color == 0:
+                #return -1000
+        
+        return my_color - (121 - my_color)
+
+
+
     #board.apply_action(action)
     my_expension = get_all_expansion(board._state, color, depth)
     opp_expension = get_all_expansion(board._state, color.opponent, depth)
-    if(len(opp_expension) == 0):
+    if board.turn_count == color:
         #board.undo_action()
-        return 1000
+        if len(my_expension) == 0:
+            return -1000
+        #if len(opp_expension) == 0:
+            #return 1000
+    if board.turn_count == color.opponent:
+        if len(opp_expension) == 0:
+            return 1000
+        #if len(my_expension) == 0:
+            #return -1000
     h = len(my_expension) - len(opp_expension)
     #board.undo_action()
     #nprint(h)
+    #print("h = ", h)
     return h
-
-def chooseAction(board: Board, color, actions):
-    if len(actions) >= 50:
-        print("111112222233333")
-        maxh = 0
-        action = actions[0]
-        for a in actions:
-        #print(x)
-        #x += 1
-        #if length < 10:
-            #currh = heuristic_relax(board, color, a)
-        #if length < 100:
-            #board.apply_action(a) 
-            #currh = heuristic(board, color, 4)
-            #board.undo_action
-        #elif 100 <= length:
-            #print(board.render(True, True))
-            board.apply_action(a)
-            currh = heuristic(board, color, 2)
-            board.undo_action()
-            #print(board.render(True, True))
-        #else:
-            #currh = heuristic(board, color, a, 4)
-        
-            if currh > maxh:
-                maxh = currh
-                action = a
-            #print(action, heuristic)
-        return action
-    else:
-        print("aaaaaabbbbbbccccc")
-        action = choose_action(board, color, actions)
-        return action
 
 def checkEmpty(board):
     for key in board:
@@ -258,22 +249,21 @@ apply(a blue)
         apply(a blue)
             minmax(0 red 0)
             return h(blue)
-
-
-
-
 '''
-def minMax(board: Board, depth, ismax, color: PlayerColor, alpha, beta):
+
+def minMax(board: Board, depth, ismax, color: PlayerColor, alpha, beta, h_depth, start_time):
     #print(board.render(True, True))
     #print("curr depth = ", depth, color)
 
     if depth == 0:
         #board.undo_action
         #print(board.render(True, True))
+
         if ismax == 0:
-            h = heuristic(board, color.opponent, 4)
+            h = heuristic(board, color.opponent, h_depth)
         else:
-            h = heuristic(board, color, 4)
+            h = heuristic(board, color, h_depth)
+
         board.undo_action()
         #print(board.render(True, True))
         #print("h = ", h)
@@ -285,6 +275,23 @@ def minMax(board: Board, depth, ismax, color: PlayerColor, alpha, beta):
     for e in my_expension:
         my_actions.append(e.get_placeAction())
     
+    depth_decrement_factor = 1
+    if len(my_expension) <= 25 and h_depth != -1:
+        #print("current depth = " , h_depth)
+        h_depth = 4
+    elif 25 < len(my_expension) <= 40 and h_depth != -1:
+        #print("current depth = " , h_depth)
+        h_depth = 3
+    else:
+        h_depth = 3
+        print("current depth = " , h_depth,   "depth_decrement_factor = 2")
+        depth_decrement_factor = 2
+
+    if time.time() - start_time >= 30:
+        h_depth = 3
+        print("too slow lol")
+        depth_decrement_factor = 2
+
     opp_expension = get_all_expansion(board._state, color.opponent, 4)
 
     if(len(opp_expension) == 0):
@@ -305,12 +312,16 @@ def minMax(board: Board, depth, ismax, color: PlayerColor, alpha, beta):
         for a in my_actions:
             #print("action = ", a, "color = ", color)
             board.apply_action(a)
-            evaluation = minMax(board, depth - 1, ismax - 1, color.opponent, alpha, beta)
+            new_depth = depth - depth_decrement_factor
+            if new_depth < 0:
+                new_depth = 0
+            evaluation = minMax(board, new_depth, ismax - 1, color.opponent, alpha, beta, h_depth, start_time)
             if evaluation > currMax:
                 currMax = evaluation
 
             alpha = max(alpha, evaluation)
             if beta <= alpha:
+                #print("prunning   maxmaxmax")
                 break  # Beta cutoff
 
         board.undo_action()
@@ -322,18 +333,25 @@ def minMax(board: Board, depth, ismax, color: PlayerColor, alpha, beta):
             #print("action = ", a, "color = ", color)
             board.apply_action(a)
             #print("action = ", a)
-            evaluation = minMax(board, depth - 1, ismax + 1, color.opponent, alpha, beta)
+            new_depth = depth - depth_decrement_factor
+            if new_depth < 0:
+                new_depth = 0
+            evaluation = minMax(board, new_depth, ismax + 1, color.opponent, alpha, beta, h_depth, start_time)
             if evaluation < currMin:
                 currMin = evaluation
 
             beta = min(beta, evaluation)
             if beta <= alpha:
+                #print("prunning  minminmin")
                 break  # Alpha cutoff
 
         board.undo_action()
         return currMin
 
 def choose_action(board: Board, color: PlayerColor, my_actions):
+    start_time = time.time()
+
+    h_depth = 3
 
     curr_best_move = my_actions[0]
     curr_best_value = float('-inf')
@@ -341,15 +359,43 @@ def choose_action(board: Board, color: PlayerColor, my_actions):
     alpha = float('-inf')
     beta = float('inf')
 
+    depth = 0
+    if len(my_actions) <= 10:
+        depth = 3
+    elif 10 < len(my_actions) <= 40:
+        depth = 2
+    elif 40 < len(my_actions) <= 120:
+        depth = 1
+    else:
+        depth = 0
+
+    print("depth = ", depth)
+
+    if len(my_actions) <= 30:
+        h_depth = 4
+    elif 30 < len(my_actions) <= 100:
+        h_depth = 3
+    elif 100 < len(my_actions):
+        h_depth = 2
+
+    if board.turn_count >= 110:
+        cellFilled = 0
+        for key in board._state:
+            if board._state[key] != PlayerColor.BLUE:
+                cellFilled += 1
+        if cellFilled <= 70:
+            h_depth = -1
+ 
     for a in my_actions:
         #print("111")
         board.apply_action(a)
-        curr_value = minMax(board, 2, 0, color.opponent, alpha, beta)
+        curr_value = minMax(board, depth, 0, color.opponent, alpha, beta, h_depth, start_time)
         if curr_value > curr_best_value:
             curr_best_value = curr_value
             curr_best_move = a
         alpha = max(alpha, curr_value)
         if beta <= alpha:
+            #print("prunning aaa")
             break  # Beta cutoff
     #board.undo_action()
 
